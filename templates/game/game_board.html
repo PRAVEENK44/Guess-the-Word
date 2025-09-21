@@ -1,0 +1,317 @@
+{% extends 'base.html' %}
+
+{% block title %}Game Board - Guess the Word{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card card-shadow">
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <h1 class="display-4 fw-bold text-primary mb-3">
+                        <i class="bi bi-puzzle-fill me-2"></i>Guess the Word
+                    </h1>
+                    <p class="lead text-muted">Guess the 5-letter word in 5 attempts. Daily limit: 3 games</p>
+                    
+                    <div class="row justify-content-center mb-4">
+                        <div class="col-md-6">
+                            <div class="stats-card">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <h4 class="mb-1">{{ daily_games_played }}</h4>
+                                        <small>Games Today</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <h4 class="mb-1">3</h4>
+                                        <small>Daily Limit</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if not can_play_today %}
+                    <div class="alert alert-warning text-center">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        You have reached today's limit of 3 games. Come back tomorrow!
+                    </div>
+                {% elif not active_session %}
+                    <div class="text-center">
+                        <button id="startGameBtn" class="btn btn-custom btn-lg" {% if not can_play_today %}disabled{% endif %}>
+                            <i class="bi bi-play-fill me-2"></i>Start New Game
+                        </button>
+                    </div>
+                {% else %}
+                    <div class="game-board">
+                        <div id="gameStatus" class="text-center mb-4">
+                            <h5>Attempts: <span id="attemptsCount">0</span>/5</h5>
+                        </div>
+
+                        <div id="gameBoard" class="mb-4">
+                            <div class="guess-row" id="row-0">
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                            </div>
+                            <div class="guess-row" id="row-1">
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                            </div>
+                            <div class="guess-row" id="row-2">
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                            </div>
+                            <div class="guess-row" id="row-3">
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                            </div>
+                            <div class="guess-row" id="row-4">
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                                <div class="letter-tile letter-default"></div>
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <div class="input-group justify-content-center mb-3">
+                                <input type="text" id="guessInput" class="form-control input-custom" 
+                                       maxlength="5" placeholder="Enter word" style="max-width: 200px;">
+                                <button id="submitGuessBtn" class="btn btn-custom ms-2">
+                                    <i class="bi bi-send me-1"></i>Guess
+                                </button>
+                            </div>
+                            
+                            <div class="d-flex justify-content-center gap-2">
+                                <button id="newGameBtn" class="btn btn-outline-primary">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>New Game
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="gameResultModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <div id="resultIcon" class="mb-3">
+                    <i class="bi bi-trophy-fill text-warning" style="font-size: 4rem;"></i>
+                </div>
+                <h3 id="resultTitle" class="mb-3">Congratulations!</h3>
+                <p id="resultMessage" class="text-muted mb-4">You guessed the word correctly!</p>
+                <button class="btn btn-custom" data-bs-dismiss="modal">
+                    <i class="bi bi-play-fill me-2"></i>Play Again
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentSessionId = null;
+let currentGuessCount = 0;
+let gameCompleted = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const startGameBtn = document.getElementById('startGameBtn');
+    const newGameBtn = document.getElementById('newGameBtn');
+    const guessInput = document.getElementById('guessInput');
+    const submitGuessBtn = document.getElementById('submitGuessBtn');
+    const gameResultModal = new bootstrap.Modal(document.getElementById('gameResultModal'));
+
+    if (startGameBtn) {
+        startGameBtn.addEventListener('click', startNewGame);
+    }
+
+    if (newGameBtn) {
+        newGameBtn.addEventListener('click', startNewGame);
+    }
+
+    if (guessInput) {
+        guessInput.addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+        });
+
+        guessInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.target.value.length === 5) {
+                submitGuess();
+            }
+        });
+    }
+
+    if (submitGuessBtn) {
+        submitGuessBtn.addEventListener('click', submitGuess);
+    }
+
+    {% if active_session %}
+        currentSessionId = {{ active_session.id }};
+        loadSessionData();
+    {% endif %}
+});
+
+function startNewGame() {
+    fetch('{% url "start_new_game" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentSessionId = data.session_id;
+            currentGuessCount = 0;
+            gameCompleted = false;
+            clearGameBoard();
+            document.getElementById('gameStatus').style.display = 'block';
+            document.getElementById('gameBoard').style.display = 'block';
+            document.getElementById('guessInput').disabled = false;
+            document.getElementById('submitGuessBtn').disabled = false;
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while starting the game.');
+    });
+}
+
+function submitGuess() {
+    const guess = document.getElementById('guessInput').value;
+    
+    if (guess.length !== 5) {
+        alert('Please enter a 5-letter word.');
+        return;
+    }
+
+    if (gameCompleted) {
+        return;
+    }
+
+    fetch('{% url "submit_guess" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            session_id: currentSessionId,
+            guess: guess
+        }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayGuess(guess, data.feedback);
+            currentGuessCount++;
+            document.getElementById('attemptsCount').textContent = currentGuessCount;
+            document.getElementById('guessInput').value = '';
+
+            if (data.is_completed) {
+                gameCompleted = true;
+                document.getElementById('guessInput').disabled = true;
+                document.getElementById('submitGuessBtn').disabled = true;
+                
+                if (data.is_won) {
+                    showGameResult(true, 'Congratulations!', 'You guessed the word correctly!');
+                } else {
+                    showGameResult(false, 'Better luck next time!', 'You used all 5 attempts.');
+                }
+            }
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while submitting your guess.');
+    });
+}
+
+function displayGuess(guess, feedback) {
+    const row = document.getElementById(`row-${currentGuessCount}`);
+    const tiles = row.querySelectorAll('.letter-tile');
+    
+    for (let i = 0; i < 5; i++) {
+        tiles[i].textContent = guess[i];
+        tiles[i].className = `letter-tile letter-${feedback[i].status}`;
+    }
+}
+
+function clearGameBoard() {
+    for (let i = 0; i < 5; i++) {
+        const row = document.getElementById(`row-${i}`);
+        const tiles = row.querySelectorAll('.letter-tile');
+        tiles.forEach(tile => {
+            tile.textContent = '';
+            tile.className = 'letter-tile letter-default';
+        });
+    }
+}
+
+function showGameResult(isWon, title, message) {
+    const resultIcon = document.getElementById('resultIcon');
+    const resultTitle = document.getElementById('resultTitle');
+    const resultMessage = document.getElementById('resultMessage');
+    
+    if (isWon) {
+        resultIcon.innerHTML = '<i class="bi bi-trophy-fill text-warning" style="font-size: 4rem;"></i>';
+    } else {
+        resultIcon.innerHTML = '<i class="bi bi-x-circle-fill text-danger" style="font-size: 4rem;"></i>';
+    }
+    
+    resultTitle.textContent = title;
+    resultMessage.textContent = message;
+    
+    gameResultModal.show();
+}
+
+function loadSessionData() {
+    if (!currentSessionId) return;
+    
+    fetch(`/api/session/${currentSessionId}/`)
+    .then(response => response.json())
+    .then(data => {
+        currentGuessCount = data.guesses.length;
+        gameCompleted = data.is_completed;
+        
+        document.getElementById('attemptsCount').textContent = currentGuessCount;
+        
+        data.guesses.forEach((guess, index) => {
+            displayGuess(guess.word, guess.feedback);
+        });
+        
+        if (gameCompleted) {
+            document.getElementById('guessInput').disabled = true;
+            document.getElementById('submitGuessBtn').disabled = true;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading session data:', error);
+    });
+}
+</script>
+{% endblock %}

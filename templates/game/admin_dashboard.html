@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - Guess the Word{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="display-5 fw-bold text-white">
+                <i class="bi bi-graph-up me-2"></i>Admin Dashboard
+            </h1>
+            <div class="d-flex align-items-center gap-3">
+                <form method="get" class="d-flex gap-2">
+                    <input type="date" name="date" value="{{ selected_date }}" class="form-control" style="width: auto;">
+                    <button type="submit" class="btn btn-light">
+                        <i class="bi bi-search me-1"></i>Filter
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="bi bi-people-fill" style="font-size: 2.5rem;"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-1">{{ daily_stats.total_users }}</h3>
+                            <p class="mb-0">Total Users</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="bi bi-trophy-fill" style="font-size: 2.5rem;"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-1">{{ daily_stats.correct_guesses }}</h3>
+                            <p class="mb-0">Correct Guesses</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="bi bi-graph-up" style="font-size: 2.5rem;"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-1">{{ daily_stats.total_games }}</h3>
+                            <p class="mb-0">Total Games</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if daily_stats.total_games > 0 %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card card-shadow">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Daily Success Rate</h5>
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1 me-3">
+                                <div class="success-rate-bar">
+                                    <div class="success-rate-fill" style="width: {% widthratio daily_stats.correct_guesses daily_stats.total_games 100 %}%"></div>
+                                </div>
+                            </div>
+                            <span class="fw-bold">
+                                {% widthratio daily_stats.correct_guesses daily_stats.total_games 100 %}%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card card-shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-people me-2"></i>User Performance - {{ selected_date|date:"F d, Y" }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if user_reports %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Username</th>
+                                            <th>Words Tried</th>
+                                            <th>Correct Guesses</th>
+                                            <th>Success Rate</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for report in user_reports %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-person-circle me-2"></i>
+                                                    {{ report.user.username }}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">{{ report.words_tried }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-success">{{ report.correct_guesses }}</span>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="success-rate-bar me-2" style="width: 100px;">
+                                                        <div class="success-rate-fill" style="width: {{ report.success_rate }}%"></div>
+                                                    </div>
+                                                    <span class="fw-bold">{{ report.success_rate|floatformat:1 }}%</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-calendar-x text-muted" style="font-size: 3rem;"></i>
+                                <h5 class="text-muted mt-3">No data for selected date</h5>
+                                <p class="text-muted">No games were played on {{ selected_date|date:"F d, Y" }}.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card card-shadow">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-info-circle me-2"></i>Quick Stats
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 mb-3">
+                                <div class="border rounded p-3">
+                                    <h4 class="text-primary mb-1">{{ daily_stats.total_users }}</h4>
+                                    <small class="text-muted">Active Users</small>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="border rounded p-3">
+                                    <h4 class="text-success mb-1">{{ daily_stats.correct_guesses }}</h4>
+                                    <small class="text-muted">Wins</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3">
+                                    <h4 class="text-warning mb-1">{{ daily_stats.total_games|add:"-"|add:daily_stats.correct_guesses }}</h4>
+                                    <small class="text-muted">Losses</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3">
+                                    <h4 class="text-info mb-1">{{ daily_stats.total_games }}</h4>
+                                    <small class="text-muted">Total Games</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
