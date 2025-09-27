@@ -8,8 +8,8 @@
         <div class="card card-shadow">
             <div class="card-body p-4">
                 <div class="text-center mb-4">
-                    <h1 class="display-4 fw-bold text-primary mb-3">
-                        <i class="bi bi-puzzle-fill me-2"></i>Guess the Word
+                    <h1 class="display-4 fw-bold mb-3" style="background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                        <i class="bi bi-puzzle-fill me-2" style="background: linear-gradient(135deg, #ff6b6b, #ee5a24); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"></i>Guess the Word
                     </h1>
                     <p class="lead text-muted">Guess the 5-letter word in 5 attempts. Daily limit: 3 games</p>
                     
@@ -43,6 +43,18 @@
                         </button>
                     </div>
                 {% else %}
+                    <div class="text-center">
+                        <div class="alert alert-info mb-3">
+                            <i class="bi bi-info-circle me-2"></i>
+                            You have an active game in progress. Complete it to start a new one.
+                        </div>
+                        <button id="resumeGameBtn" class="btn btn-custom btn-lg">
+                            <i class="bi bi-arrow-right-circle me-2"></i>Resume Game
+                        </button>
+                    </div>
+                {% endif %}
+                
+                {% if active_session %}
                     <div class="game-board">
                         <div id="gameStatus" class="text-center mb-4">
                             <h5>Attempts: <span id="attemptsCount">0</span>/5</h5>
@@ -86,7 +98,7 @@
                             </div>
                         </div>
 
-                        <div class="text-center">
+                        <div class="text-center" id="gameControls">
                             <div class="input-group justify-content-center mb-3">
                                 <input type="text" id="guessInput" class="form-control input-custom" 
                                        maxlength="5" placeholder="Enter word" style="max-width: 200px;">
@@ -108,7 +120,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="gameResultModal" tabindex="-1">
+<div class="modal fade victory-modal" id="gameResultModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-body text-center p-4">
@@ -117,7 +129,8 @@
                 </div>
                 <h3 id="resultTitle" class="mb-3">Congratulations!</h3>
                 <p id="resultMessage" class="text-muted mb-4">You guessed the word correctly!</p>
-                <button class="btn btn-custom" data-bs-dismiss="modal">
+                <div id="correctWordReveal" class="d-flex justify-content-center gap-2 mb-3" style="min-height:56px; display:none;"></div>
+                <button id="resultActionBtn" class="btn btn-custom" data-bs-dismiss="modal">
                     <i class="bi bi-play-fill me-2"></i>Play Again
                 </button>
             </div>
@@ -131,13 +144,107 @@
 let currentSessionId = null;
 let currentGuessCount = 0;
 let gameCompleted = false;
+let gameResultModal = null;
+
+// Animation and notification functions
+function createConfetti() {
+    const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7'];
+    for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + 'vw';
+        confetti.style.animationDelay = Math.random() * 3 + 's';
+        confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+        document.body.appendChild(confetti);
+        
+        setTimeout(() => {
+            confetti.remove();
+        }, 3000);
+    }
+}
+
+function showNotification(message, type = 'info', duration = 3000) {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info-circle'} me-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'fade-out-notification 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, duration);
+}
+
+function setButtonLoading(button, isLoading) {
+    if (isLoading) {
+        button.classList.add('btn-loading');
+        button.disabled = true;
+        const originalText = button.innerHTML;
+        button.setAttribute('data-original-text', originalText);
+        button.innerHTML = '<div class="loading-spinner"></div><span class="btn-text" style="opacity: 0;">Loading...</span>';
+    } else {
+        button.classList.remove('btn-loading');
+        button.disabled = false;
+        const originalText = button.getAttribute('data-original-text');
+        if (originalText) {
+            button.innerHTML = originalText;
+        }
+    }
+}
+
+function updateDailyGamesCount() {
+    // Fetch current daily stats from the server
+    fetch('/api/daily-stats/')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const gamesPlayedElement = document.querySelector('.stats-card h4');
+            if (gamesPlayedElement) {
+                // Add animation to the counter
+                gamesPlayedElement.style.transform = 'scale(1.2)';
+                gamesPlayedElement.style.color = '#ff6b6b';
+                gamesPlayedElement.textContent = data.games_played;
+                
+                setTimeout(() => {
+                    gamesPlayedElement.style.transform = 'scale(1)';
+                    gamesPlayedElement.style.color = '';
+                }, 300);
+            }
+            
+            // Update the daily limit warning if needed
+            if (data.games_played >= 3) {
+                const startGameBtn = document.getElementById('startGameBtn');
+                if (startGameBtn) {
+                    startGameBtn.disabled = true;
+                    startGameBtn.innerHTML = '<i class="bi bi-lock me-2"></i>Daily Limit Reached';
+                }
+                
+                // Show warning notification
+                showNotification('🚫 Daily limit reached! Come back tomorrow!', 'warning', 5000);
+            } else if (data.games_played === 2) {
+                // Show warning when approaching limit
+                showNotification('⚠️ Last game of the day! Make it count!', 'warning', 3000);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching daily stats:', error);
+    });
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     const startGameBtn = document.getElementById('startGameBtn');
     const newGameBtn = document.getElementById('newGameBtn');
+    const resumeGameBtn = document.getElementById('resumeGameBtn');
     const guessInput = document.getElementById('guessInput');
     const submitGuessBtn = document.getElementById('submitGuessBtn');
-    const gameResultModal = new bootstrap.Modal(document.getElementById('gameResultModal'));
+    gameResultModal = new bootstrap.Modal(document.getElementById('gameResultModal'));
 
     if (startGameBtn) {
         startGameBtn.addEventListener('click', startNewGame);
@@ -145,6 +252,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (newGameBtn) {
         newGameBtn.addEventListener('click', startNewGame);
+    }
+
+    if (resumeGameBtn) {
+        resumeGameBtn.addEventListener('click', resumeGame);
     }
 
     if (guessInput) {
@@ -167,49 +278,141 @@ document.addEventListener('DOMContentLoaded', function() {
         currentSessionId = {{ active_session.id }};
         loadSessionData();
     {% endif %}
+    
+    // Update daily games count on page load
+    updateDailyGamesCount();
 });
 
+function resumeGame() {
+    console.log('Resume game clicked');
+    // Hide the resume button and show the game board
+    const resumeGameBtn = document.getElementById('resumeGameBtn');
+    if (resumeGameBtn) {
+        resumeGameBtn.style.display = 'none';
+    }
+    
+    // Show game elements
+    document.getElementById('gameStatus').style.display = 'block';
+    document.getElementById('gameBoard').style.display = 'block';
+    document.getElementById('gameControls').style.display = 'block';
+    document.getElementById('guessInput').disabled = false;
+    document.getElementById('submitGuessBtn').disabled = false;
+    
+    // Load the existing session data
+    loadSessionData();
+    
+    showNotification('🎮 Game resumed! Continue where you left off.', 'info');
+}
+
 function startNewGame() {
+    console.log('Start new game clicked');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    const startGameBtn = document.getElementById('startGameBtn');
+    const newGameBtn = document.getElementById('newGameBtn');
+    
+    // Show loading animation
+    if (startGameBtn) setButtonLoading(startGameBtn, true);
+    if (newGameBtn) setButtonLoading(newGameBtn, true);
+    
     fetch('{% url "start_new_game" %}', {
         method: 'POST',
         headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-CSRFToken': csrfToken ? csrfToken.value : '',
             'Content-Type': 'application/json',
         },
     })
-    .then(response => response.json())
+    .then(async response => {
+        console.log('Response status:', response.status);
+        const redirectedToLogin = response.url.includes('/login');
+        const contentType = response.headers.get('content-type') || '';
+        let data = null;
+        if (contentType.includes('application/json')) {
+            try { data = await response.json(); } catch (e) { data = null; }
+        }
+
+        if (redirectedToLogin) {
+            showNotification('🔒 Session expired. Please log in again.', 'warning', 4000);
+            setTimeout(() => { window.location.href = '/login/?next=/game/'; }, 500);
+            throw new Error('Redirected to login');
+        }
+
+        if (!response.ok) {
+            const errMsg = data && data.error ? data.error : `Request failed (HTTP ${response.status})`;
+            throw new Error(errMsg);
+        }
+
+        if (!data) {
+            throw new Error('Unexpected server response');
+        }
+
+        return data;
+    })
     .then(data => {
+        console.log('Response data:', data);
         if (data.success) {
             currentSessionId = data.session_id;
             currentGuessCount = 0;
             gameCompleted = false;
             clearGameBoard();
+            
+            // Hide the start button and show the game board
+            if (startGameBtn) {
+                startGameBtn.style.display = 'none';
+            }
+            
+            // Show game elements with animation
             document.getElementById('gameStatus').style.display = 'block';
             document.getElementById('gameBoard').style.display = 'block';
+            document.getElementById('gameControls').style.display = 'block';
             document.getElementById('guessInput').disabled = false;
             document.getElementById('submitGuessBtn').disabled = false;
-            location.reload();
+            document.getElementById('attemptsCount').textContent = '0';
+            
+            // Update daily games count
+            updateDailyGamesCount();
+            
+            // Focus on input with animation
+            const input = document.getElementById('guessInput');
+            input.focus();
+            input.classList.add('success-pulse');
+            setTimeout(() => input.classList.remove('success-pulse'), 500);
+            
+            showNotification('🎮 New game started! Good luck!', 'success');
         } else {
-            alert('Error: ' + data.error);
+            showNotification(`❌ ${data.error}`, 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while starting the game.');
+        if (String(error.message).includes('Redirected to login')) return;
+        showNotification(`❌ ${error.message || 'Connection error. Please try again.'}`, 'error');
+    })
+    .finally(() => {
+        // Remove loading animation
+        if (startGameBtn) setButtonLoading(startGameBtn, false);
+        if (newGameBtn) setButtonLoading(newGameBtn, false);
     });
 }
 
 function submitGuess() {
     const guess = document.getElementById('guessInput').value;
+    const submitBtn = document.getElementById('submitGuessBtn');
     
     if (guess.length !== 5) {
-        alert('Please enter a 5-letter word.');
+        showNotification('⚠️ Please enter a 5-letter word.', 'warning');
+        // Shake animation for input
+        const input = document.getElementById('guessInput');
+        input.classList.add('shake');
+        setTimeout(() => input.classList.remove('shake'), 500);
         return;
     }
 
     if (gameCompleted) {
         return;
     }
+
+    // Show loading animation
+    setButtonLoading(submitBtn, true);
 
     fetch('{% url "submit_guess" %}', {
         method: 'POST',
@@ -222,8 +425,33 @@ function submitGuess() {
             guess: guess
         }),
     })
-    .then(response => response.json())
+    .then(async response => {
+        const redirectedToLogin = response.url.includes('/login');
+        const contentType = response.headers.get('content-type') || '';
+        let data = null;
+        if (contentType.includes('application/json')) {
+            try { data = await response.json(); } catch (e) { data = null; }
+        }
+
+        if (redirectedToLogin) {
+            showNotification('🔒 Session expired. Please log in again.', 'warning', 4000);
+            setTimeout(() => { window.location.href = '/login/?next=/game/'; }, 500);
+            throw new Error('Redirected to login');
+        }
+
+        if (!response.ok) {
+            const errMsg = data && data.error ? data.error : `Request failed (HTTP ${response.status})`;
+            throw new Error(errMsg);
+        }
+
+        if (!data) {
+            throw new Error('Unexpected server response');
+        }
+
+        return data;
+    })
     .then(data => {
+        console.log('Guess response:', data);
         if (data.success) {
             displayGuess(guess, data.feedback);
             currentGuessCount++;
@@ -231,23 +459,49 @@ function submitGuess() {
             document.getElementById('guessInput').value = '';
 
             if (data.is_completed) {
+                console.log('Game completed:', { is_won: data.is_won, is_completed: data.is_completed });
                 gameCompleted = true;
                 document.getElementById('guessInput').disabled = true;
                 document.getElementById('submitGuessBtn').disabled = true;
                 
+                // Update daily games count when game is completed
+                updateDailyGamesCount();
+                
                 if (data.is_won) {
-                    showGameResult(true, 'Congratulations!', 'You guessed the word correctly!');
+                    console.log('Player won! Showing victory modal...');
+                    // Create confetti celebration
+                    createConfetti();
+                    showGameResult(true, '🎉 Congratulations!', 'You guessed the word correctly!');
+                    showNotification('🏆 Amazing! You won!', 'success', 5000);
                 } else {
-                    showGameResult(false, 'Better luck next time!', 'You used all 5 attempts.');
+                    console.log('Player lost! Showing defeat modal...');
+                    const lossMsg = data.correct_word ? `The word was ${data.correct_word}.` : 'You used all 5 attempts.';
+                    showGameResult(false, '😔 Better luck next time!', lossMsg, data.correct_word || null);
+                    showNotification('💪 Don\'t give up! Try again!', 'warning');
+                }
+            } else {
+                // Show feedback based on guess quality
+                const correctLetters = data.feedback.filter(f => f.status === 'correct').length;
+                if (correctLetters >= 3) {
+                    showNotification('🔥 Great guess! You\'re getting close!', 'success');
+                } else if (correctLetters >= 1) {
+                    showNotification('👍 Good try! Keep going!', 'info');
+                } else {
+                    showNotification('💡 Think of different letters!', 'info');
                 }
             }
         } else {
-            alert('Error: ' + data.error);
+            console.error('Guess submission error:', data.error);
+            showNotification(`❌ ${data.error}`, 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while submitting your guess.');
+        if (String(error.message).includes('Redirected to login')) return;
+        showNotification(`❌ ${error.message || 'Connection error. Please try again.'}`, 'error');
+    })
+    .finally(() => {
+        setButtonLoading(submitBtn, false);
     });
 }
 
@@ -255,9 +509,20 @@ function displayGuess(guess, feedback) {
     const row = document.getElementById(`row-${currentGuessCount}`);
     const tiles = row.querySelectorAll('.letter-tile');
     
+    // Animate each letter with a delay
     for (let i = 0; i < 5; i++) {
-        tiles[i].textContent = guess[i];
-        tiles[i].className = `letter-tile letter-${feedback[i].status}`;
+        setTimeout(() => {
+            tiles[i].textContent = guess[i];
+            tiles[i].className = `letter-tile letter-${feedback[i].status} revealing`;
+            
+            // Add special animation for correct letters
+            if (feedback[i].status === 'correct') {
+                setTimeout(() => {
+                    tiles[i].classList.add('success-pulse');
+                    setTimeout(() => tiles[i].classList.remove('success-pulse'), 500);
+                }, 300);
+            }
+        }, i * 150); // Stagger the animations
     }
 }
 
@@ -272,21 +537,94 @@ function clearGameBoard() {
     }
 }
 
-function showGameResult(isWon, title, message) {
+function showGameResult(isWon, title, message, correctWord = null) {
+    console.log('Showing game result:', { isWon, title, message });
+    
     const resultIcon = document.getElementById('resultIcon');
     const resultTitle = document.getElementById('resultTitle');
     const resultMessage = document.getElementById('resultMessage');
+    const correctWordReveal = document.getElementById('correctWordReveal');
+    
+    if (!resultIcon || !resultTitle || !resultMessage) {
+        console.error('Modal elements not found');
+        return;
+    }
     
     if (isWon) {
         resultIcon.innerHTML = '<i class="bi bi-trophy-fill text-warning" style="font-size: 4rem;"></i>';
+        // Add celebration confetti
+        createConfetti();
+        if (correctWordReveal) {
+            correctWordReveal.style.display = 'none';
+            correctWordReveal.innerHTML = '';
+        }
     } else {
         resultIcon.innerHTML = '<i class="bi bi-x-circle-fill text-danger" style="font-size: 4rem;"></i>';
+        if (correctWordReveal) {
+            correctWordReveal.style.display = 'flex';
+            revealCorrectWord(correctWord);
+        }
     }
     
     resultTitle.textContent = title;
     resultMessage.textContent = message;
     
-    gameResultModal.show();
+    if (gameResultModal) {
+        gameResultModal.show();
+        
+        // Add bounce animation to the modal
+        setTimeout(() => {
+            const modalContent = document.querySelector('.victory-modal .modal-content');
+            if (modalContent) {
+                modalContent.style.animation = 'bounce-in 0.6s ease-out';
+            }
+        }, 100);
+
+        // Configure action button
+        const actionBtn = document.getElementById('resultActionBtn');
+        if (actionBtn) {
+            // Reset previous listeners by cloning
+            const newBtn = actionBtn.cloneNode(true);
+            actionBtn.parentNode.replaceChild(newBtn, actionBtn);
+            newBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i>' + (isWon ? 'Play Again' : 'Try Again');
+            newBtn.addEventListener('click', function() {
+                // Close modal and start a new game
+                if (gameResultModal) gameResultModal.hide();
+                // Small delay to allow modal to hide smoothly
+                setTimeout(() => startNewGame(), 150);
+            });
+        }
+    } else {
+        console.error('Game result modal not initialized');
+    }
+}
+
+function revealCorrectWord(word) {
+    const container = document.getElementById('correctWordReveal');
+    if (!container) return;
+    container.innerHTML = '';
+    if (!word) return;
+
+    // Create tiles and animate letters appearing
+    const letters = word.split('');
+    for (let i = 0; i < letters.length; i++) {
+        const tile = document.createElement('div');
+        tile.className = 'letter-tile letter-correct';
+        tile.style.minWidth = '48px';
+        tile.style.minHeight = '48px';
+        tile.style.fontSize = '1.25rem';
+        tile.textContent = '';
+        container.appendChild(tile);
+
+        setTimeout(() => {
+            tile.textContent = letters[i];
+            tile.classList.add('revealing');
+            setTimeout(() => {
+                tile.classList.add('success-pulse');
+                setTimeout(() => tile.classList.remove('success-pulse'), 500);
+            }, 250);
+        }, i * 180);
+    }
 }
 
 function loadSessionData() {

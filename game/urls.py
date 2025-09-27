@@ -10,4 +10,5 @@ urlpatterns = [
     path('api/start-game/', views.start_new_game, name='start_new_game'),
     path('api/submit-guess/', views.submit_guess, name='submit_guess'),
     path('api/session/<int:session_id>/', views.get_session_data, name='get_session_data'),
+    path('api/daily-stats/', views.get_daily_stats, name='get_daily_stats'),
 ]

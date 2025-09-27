@@ -101,20 +101,20 @@ def start_new_game(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
-    # Check daily limit
-    today = timezone.now().date()
-    daily_sessions = GameSession.get_user_daily_sessions(request.user, today)
-    if daily_sessions.count() >= 3:
-        return JsonResponse({'error': 'Daily limit reached'}, status=400)
-    
-    # Check for active session
+    # Check for active session - if exists, don't allow new game
     active_session = GameSession.objects.filter(
         user=request.user,
         is_completed=False
     ).first()
     
     if active_session:
-        return JsonResponse({'error': 'You have an active game session'}, status=400)
+        return JsonResponse({'error': 'You already have an active game. Please complete it first.'}, status=400)
+    
+    # Check daily limit (only count completed games)
+    today = timezone.now().date()
+    daily_sessions = GameSession.get_user_daily_sessions(request.user, today)
+    if daily_sessions.count() >= 3:
+        return JsonResponse({'error': 'Daily limit reached'}, status=400)
     
     # Get random word
     word = GameWord.get_random_word()
@@ -193,7 +193,8 @@ def submit_guess(request):
             'is_correct': is_correct,
             'is_completed': session.is_completed,
             'is_won': session.is_won,
-            'remaining_guesses': 5 - len(session.guesses)
+            'remaining_guesses': 5 - len(session.guesses),
+            'correct_word': session.word.word if session.is_completed and not session.is_won else None
         })
         
     except Exception as e:
@@ -257,4 +258,17 @@ def get_session_data(request, session_id):
         'is_completed': session.is_completed,
         'is_won': session.is_won,
         'remaining_guesses': 5 - len(session.guesses)
+    })
+
+@login_required
+def get_daily_stats(request):
+    """Get current user's daily game statistics"""
+    today = timezone.now().date()
+    daily_sessions = GameSession.get_user_daily_sessions(request.user, today)
+    
+    return JsonResponse({
+        'success': True,
+        'games_played': daily_sessions.count(),
+        'daily_limit': 3,
+        'can_play': daily_sessions.count() < 3
     })

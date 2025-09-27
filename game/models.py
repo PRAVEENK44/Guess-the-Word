@@ -52,10 +52,11 @@ class GameSession(models.Model):
     
     @classmethod
     def get_user_daily_sessions(cls, user, date):
-        """Get user's sessions for a specific date"""
+        """Get user's COMPLETED sessions for a specific date (used for daily limits)."""
         return cls.objects.filter(
             user=user,
-            created_at__date=date
+            created_at__date=date,
+            is_completed=True
         )
     
     @classmethod
