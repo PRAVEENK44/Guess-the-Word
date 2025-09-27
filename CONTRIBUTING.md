@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing to this project! We welcome contributions from the community.
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Python 3.8 or higher
@@ -11,49 +11,50 @@ Thank you for your interest in contributing to this project! We welcome contribu
 
 ### Development Setup
 
-1. **Fork the repository**
+1. Fork the repository
    - Click the "Fork" button on GitHub
-   - Clone your fork: `git clone https://github.com/yourusername/guess-the-word-django.git`
+   - Clone your fork: git clone https://github.com/yourusername/guess-the-word-django.git
 
-2. **Set up development environment**
+2. Set up development environment
    ```bash
    cd guess-the-word-django
    python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   source venv/bin/activate
+   venv\Scripts\activate
    pip install -r requirements.txt
    ```
 
-3. **Set up the database**
+3. Set up the database
    ```bash
    python manage.py migrate
    python manage.py seed_words
    ```
 
-4. **Create a development branch**
+4. Create a development branch
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
-## 🎯 How to Contribute
+## How to Contribute
 
 ### Types of Contributions
 
-1. **Bug Fixes**
+1. Bug Fixes
    - Fix existing issues
    - Improve error handling
    - Enhance performance
 
-2. **New Features**
+2. New Features
    - Add new game modes
    - Improve UI/UX
    - Add new admin features
 
-3. **Documentation**
+3. Documentation
    - Improve README
    - Add code comments
    - Create tutorials
 
-4. **Testing**
+4. Testing
    - Add unit tests
    - Improve test coverage
    - Add integration tests
@@ -80,34 +81,34 @@ Thank you for your interest in contributing to this project! We welcome contribu
 
 ### Pull Request Process
 
-1. **Create your feature branch**
+1. Create your feature branch
    ```bash
    git checkout -b feature/amazing-feature
    ```
 
-2. **Make your changes**
+2. Make your changes
    - Write clean, readable code
    - Add tests for new functionality
    - Update documentation if needed
 
-3. **Test your changes**
+3. Test your changes
    ```bash
    python manage.py test
    python manage.py runserver
    ```
 
-4. **Commit your changes**
+4. Commit your changes
    ```bash
    git add .
    git commit -m "Add amazing feature"
    ```
 
-5. **Push to your fork**
+5. Push to your fork
    ```bash
    git push origin feature/amazing-feature
    ```
 
-6. **Create a Pull Request**
+6. Create a Pull Request
    - Go to your fork on GitHub
    - Click "New Pull Request"
    - Fill out the PR template
@@ -137,7 +138,7 @@ Brief description of changes
 - [ ] No breaking changes
 ```
 
-## 🐛 Reporting Issues
+## Reporting Issues
 
 ### Before Creating an Issue
 1. Check if the issue already exists
@@ -171,13 +172,13 @@ If applicable, add screenshots.
 Any other context about the problem.
 ```
 
-## 🎨 UI/UX Contributions
+## UI/UX Contributions
 
 ### Design Principles
-- **Consistency**: Follow existing design patterns
-- **Accessibility**: Ensure all users can use the app
-- **Responsiveness**: Work on all device sizes
-- **Performance**: Keep animations smooth
+- Consistency: Follow existing design patterns
+- Accessibility: Ensure all users can use the app
+- Responsiveness: Work on all device sizes
+- Performance: Keep animations smooth
 
 ### Color Guidelines
 - Use the established color palette
@@ -189,7 +190,7 @@ Any other context about the problem.
 - Use appropriate durations
 - Provide animation controls for accessibility
 
-## 🧪 Testing Guidelines
+## Testing Guidelines
 
 ### Unit Tests
 - Test individual functions and methods
@@ -206,7 +207,7 @@ Any other context about the problem.
 - Test browser compatibility
 - Test accessibility
 
-## 📝 Documentation
+## Documentation
 
 ### Code Documentation
 - Add docstrings to functions
@@ -218,7 +219,7 @@ Any other context about the problem.
 - Add usage examples
 - Create tutorials for new features
 
-## 🔒 Security
+## Security
 
 ### Security Guidelines
 - Never commit secrets or API keys
@@ -231,7 +232,7 @@ Any other context about the problem.
 - Do not create public issues for security problems
 - We'll respond within 48 hours
 
-## 🏷️ Release Process
+## Release Process
 
 ### Version Numbering
 - Follow Semantic Versioning (MAJOR.MINOR.PATCH)
@@ -245,7 +246,7 @@ Any other context about the problem.
 - [ ] Release notes written
 - [ ] Tag created
 
-## 💬 Communication
+## Communication
 
 ### Getting Help
 - Check existing issues and discussions
@@ -257,7 +258,7 @@ Any other context about the problem.
 - Focus on constructive feedback
 - Help others learn and grow
 
-## 🎉 Recognition
+## Recognition
 
 ### Contributors
 - All contributors are listed in README
@@ -271,7 +272,7 @@ Any other context about the problem.
 - Feature suggestions
 - Community help
 
-## 📋 Development Roadmap
+## Development Roadmap
 
 ### Short Term
 - [ ] Add more word categories
@@ -285,6 +286,4 @@ Any other context about the problem.
 - [ ] Mobile app
 - [ ] API for third-party integrations
 
----
-
-Thank you for contributing to Guess the Word Django Game! 🎮
+Thank you for contributing to Guess the Word Django Game!

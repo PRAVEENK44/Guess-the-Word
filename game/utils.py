@@ -2,11 +2,9 @@ import re
 from typing import List, Dict, Any
 
 def validate_username(username: str) -> bool:
-    """Validate username: at least 5 letters (both upper and lower case)"""
     return len(username) >= 5 and re.match(r'^[a-zA-Z]+$', username) is not None
 
 def validate_password(password: str) -> bool:
-    """Validate password: at least 5 characters with alpha, numeric, and special chars $, %, *, @"""
     if len(password) < 5:
         return False
     
@@ -17,18 +15,15 @@ def validate_password(password: str) -> bool:
     return has_alpha and has_numeric and has_special
 
 def validate_word(word: str) -> bool:
-    """Validate word: exactly 5 uppercase letters"""
     return len(word) == 5 and re.match(r'^[A-Z]+$', word) is not None
 
 def generate_letter_feedback(guess: str, target_word: str) -> List[Dict[str, Any]]:
-    """Generate feedback for each letter in the guess"""
     feedback = []
     target_letters = list(target_word)
     guess_letters = list(guess)
     used_target_positions = set()
     used_guess_positions = set()
     
-    # First pass: find exact matches (correct position)
     for i in range(len(guess_letters)):
         if guess_letters[i] == target_letters[i]:
             feedback.append({
@@ -41,7 +36,6 @@ def generate_letter_feedback(guess: str, target_word: str) -> List[Dict[str, Any
         else:
             feedback.append(None)
     
-    # Second pass: find letters in wrong position
     for i in range(len(guess_letters)):
         if used_guess_positions.intersection({i}):
             continue
@@ -60,7 +54,6 @@ def generate_letter_feedback(guess: str, target_word: str) -> List[Dict[str, Any
                 used_guess_positions.add(i)
                 break
     
-    # Third pass: mark remaining letters as absent
     for i in range(len(guess_letters)):
         if not used_guess_positions.intersection({i}):
             feedback[i] = {
@@ -72,5 +65,4 @@ def generate_letter_feedback(guess: str, target_word: str) -> List[Dict[str, Any
     return feedback
 
 def is_word_correct(guess: str, target_word: str) -> bool:
-    """Check if the guess matches the target word exactly"""
     return guess == target_word

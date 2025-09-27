@@ -6,7 +6,6 @@ class Command(BaseCommand):
     help = 'Remove 4-letter words from the database'
 
     def handle(self, *args, **options):
-        # Find all 4-letter words using extra() or by checking length in Python
         all_words = GameWord.objects.all()
         four_letter_words = []
         
@@ -21,7 +20,6 @@ class Command(BaseCommand):
             for word in four_letter_words:
                 self.stdout.write(f'  - {word.word}')
             
-            # Delete them
             for word in four_letter_words:
                 word.delete()
             
@@ -33,6 +31,5 @@ class Command(BaseCommand):
                 self.style.SUCCESS('No 4-letter words found in database.')
             )
         
-        # Show remaining word count
         total_words = GameWord.objects.count()
         self.stdout.write(f'Total words remaining: {total_words}')

@@ -14,7 +14,6 @@ from .models import CustomUser, GameWord, GameSession, GameGuess
 from .utils import validate_username, validate_password, validate_word, generate_letter_feedback, is_word_correct
 
 def home(request):
-    """Home page - redirect to appropriate view based on user status"""
     if request.user.is_authenticated:
         if request.user.role == 'admin':
             return redirect('admin_dashboard')
@@ -23,7 +22,6 @@ def home(request):
     return redirect('login')
 
 def login_view(request):
-    """Login view"""
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -38,13 +36,11 @@ def login_view(request):
     return render(request, 'game/login.html')
 
 def register_view(request):
-    """Registration view"""
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
         
-        # Validation
         if not validate_username(username):
             messages.error(request, 'Username must be at least 5 letters (letters only).')
             return render(request, 'game/register.html')
@@ -61,7 +57,6 @@ def register_view(request):
             messages.error(request, 'Username already exists.')
             return render(request, 'game/register.html')
         
-        # Create user
         user = CustomUser.objects.create_user(
             username=username,
             password=password,
@@ -75,13 +70,10 @@ def register_view(request):
 
 @login_required
 def game_board(request):
-    """Main game board for players"""
-    # Check daily game limit
     today = timezone.now().date()
     daily_sessions = GameSession.get_user_daily_sessions(request.user, today)
     can_play_today = daily_sessions.count() < 3
     
-    # Get current active session
     active_session = GameSession.objects.filter(
         user=request.user,
         is_completed=False
@@ -97,11 +89,9 @@ def game_board(request):
 
 @login_required
 def start_new_game(request):
-    """Start a new game session"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
-    # Check for active session - if exists, don't allow new game
     active_session = GameSession.objects.filter(
         user=request.user,
         is_completed=False
@@ -110,18 +100,15 @@ def start_new_game(request):
     if active_session:
         return JsonResponse({'error': 'You already have an active game. Please complete it first.'}, status=400)
     
-    # Check daily limit (only count completed games)
     today = timezone.now().date()
     daily_sessions = GameSession.get_user_daily_sessions(request.user, today)
     if daily_sessions.count() >= 3:
         return JsonResponse({'error': 'Daily limit reached'}, status=400)
     
-    # Get random word
     word = GameWord.get_random_word()
     if not word:
         return JsonResponse({'error': 'No words available'}, status=500)
     
-    # Create new session
     session = GameSession.objects.create(
         user=request.user,
         word=word
@@ -136,7 +123,6 @@ def start_new_game(request):
 @login_required
 @csrf_exempt
 def submit_guess(request):
-    """Submit a word guess"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
@@ -145,25 +131,20 @@ def submit_guess(request):
         session_id = data.get('session_id')
         guess = data.get('guess', '').upper()
         
-        # Validate input
         if not validate_word(guess):
             return JsonResponse({'error': 'Invalid word format'}, status=400)
         
-        # Get session
         session = get_object_or_404(GameSession, id=session_id, user=request.user)
         
         if session.is_completed:
             return JsonResponse({'error': 'Game session completed'}, status=400)
         
-        # Check guess count
         if len(session.guesses) >= 5:
             return JsonResponse({'error': 'Maximum guesses reached'}, status=400)
         
-        # Generate feedback
         feedback = generate_letter_feedback(guess, session.word.word)
         is_correct = is_word_correct(guess, session.word.word)
         
-        # Create guess record
         GameGuess.objects.create(
             session=session,
             word=guess,
@@ -171,11 +152,9 @@ def submit_guess(request):
             is_correct=is_correct
         )
         
-        # Update session
         session.guesses.append(guess)
         session.save()
         
-        # Check if game is won or lost
         if is_correct:
             session.is_completed = True
             session.is_won = True
@@ -202,21 +181,17 @@ def submit_guess(request):
 
 @login_required
 def admin_dashboard(request):
-    """Admin dashboard for reports"""
     if request.user.role != 'admin':
         return redirect('game_board')
     
-    # Get date filter
     selected_date = request.GET.get('date', timezone.now().date().isoformat())
     try:
         filter_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
     except ValueError:
         filter_date = timezone.now().date()
     
-    # Get daily stats
     daily_stats = GameSession.get_daily_stats(filter_date)
     
-    # Get user reports for the selected date
     user_sessions = GameSession.objects.filter(created_at__date=filter_date)
     user_reports = []
     
@@ -241,7 +216,6 @@ def admin_dashboard(request):
 
 @login_required
 def get_session_data(request, session_id):
-    """Get current session data"""
     session = get_object_or_404(GameSession, id=session_id, user=request.user)
     
     guesses_data = []
@@ -262,7 +236,6 @@ def get_session_data(request, session_id):
 
 @login_required
 def get_daily_stats(request):
-    """Get current user's daily game statistics"""
     today = timezone.now().date()
     daily_sessions = GameSession.get_user_daily_sessions(request.user, today)
     
