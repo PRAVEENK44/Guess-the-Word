@@ -1,8 +1,8 @@
-# Guess the word Game
+# Guess the Word Game
 
 A modern, interactive word guessing game featuring beautiful animations, real-time updates, and comprehensive admin reporting.
 
-## Features
+## 🎮 Features
 
 ### Core Gameplay
 - 5-letter word guessing with 5 attempts maximum
@@ -23,15 +23,7 @@ A modern, interactive word guessing game featuring beautiful animations, real-ti
 - Date filtering for historical analysis
 - Real-time statistics with visual charts
 
-### Modern UI/UX
-- Responsive design with Bootstrap 5
-- Glass-morphism effects and gradient backgrounds
-- Smooth animations and transitions
-- Toast notifications instead of browser alerts
-- Confetti celebrations on victories
-- Loading states and progress indicators
-
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 - Python 3.8+
@@ -39,45 +31,46 @@ A modern, interactive word guessing game featuring beautiful animations, real-ti
 
 ### Installation
 
-1. Clone the repository
+1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/guess-the-word-django.git
-   cd guess-the-word-django
+   git clone https://github.com/PRAVEENK44/Guess-the-Word.git
+   cd Guess-the-Word
    ```
 
-2. Create virtual environment
+2. **Create virtual environment**
    ```bash
    python -m venv venv
+   # Windows
    venv\Scripts\activate
+   # macOS/Linux
    source venv/bin/activate
    ```
 
-3. Install dependencies
+3. **Install dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
-4. Set up database
+4. **Set up database**
    ```bash
    python manage.py migrate
-   python manage.py seed_words
    ```
 
-5. Create admin user
+5. **Create admin user**
    ```bash
    python manage.py createsuperuser
    ```
 
-6. Run the server
+6. **Run the server**
    ```bash
    python manage.py runserver
    ```
 
-7. Access the application
+7. **Access the application**
    - Game: http://127.0.0.1:8000/
    - Admin: http://127.0.0.1:8000/admin/
 
-## How to Play
+## 🎯 How to Play
 
 1. Register/Login with your credentials
 2. Start a new game (up to 3 per day)
@@ -85,145 +78,75 @@ A modern, interactive word guessing game featuring beautiful animations, real-ti
 4. Win by guessing correctly or try again after 5 attempts
 5. View your progress in the admin dashboard
 
-## Project Structure
+## 📁 Project Structure
 
 ```
-guess_the_word_django/
-├── game/
-│   ├── management/
-│   │   └── commands/
-│   │       ├── seed_words.py
-│   │       └── cleanup_words.py
-│   ├── models.py
-│   ├── views.py
-│   ├── urls.py
-│   └── utils.py
-├── templates/
+Guess-the-Word/
+├── game/                          # Main Django app
+│   ├── models.py                  # Database models
+│   ├── views.py                   # View functions
+│   ├── urls.py                    # URL routing
+│   ├── admin.py                   # Admin configuration
+│   ├── utils.py                   # Utility functions
+│   └── migrations/                # Database migrations
+├── guess_the_word_django/         # Django project settings
+│   ├── settings.py                # Project settings
+│   ├── urls.py                    # Main URL configuration
+│   ├── wsgi.py                    # WSGI configuration
+│   └── asgi.py                    # ASGI configuration
+├── templates/                     # HTML templates
 │   ├── base.html
 │   └── game/
 │       ├── game_board.html
 │       ├── login.html
 │       ├── register.html
 │       └── admin_dashboard.html
-├── static/
-├── requirements.txt
-├── Procfile
-└── README.md
+├── manage.py                      # Django management script
+├── requirements.txt               # Python dependencies
+├── Procfile                       # Heroku deployment
+└── README.md                      # This file
 ```
 
-## Database Models
+## 🛠️ Technologies Used
 
-### CustomUser
-- Extended User with role field
-- Roles: 'admin' or 'player'
+- **Backend**: Python 3.8+
+- **Framework**: Django
+- **Frontend**: Bootstrap 5, JavaScript ES6, CSS3
+- **Database**: SQLite (development), PostgreSQL (production)
+- **Deployment**: Heroku-ready with Procfile
 
-### GameWord
-- Stores 5-letter words for the game
-- 500+ words seeded by default
+## 🚀 Deployment
 
-### GameSession
-- Tracks individual game sessions
-- Stores guesses, completion status, win/loss
+### Heroku Deployment
+1. Create a Heroku app
+2. Set environment variables:
+   ```
+   SECRET_KEY=your-secret-key
+   DEBUG=False
+   ```
+3. Deploy:
+   ```bash
+   git push heroku main
+   heroku run python manage.py migrate
+   ```
 
-### GameGuess
-- Individual guesses within a session
-- Stores word, feedback, and correctness
+## 📝 License
 
-## Design System
+This project is open source and available under the [MIT License](LICENSE).
 
-### Color Palette
-- Primary: Blue gradients (#667eea → #764ba2)
-- Accent: Coral gradients (#ff6b6b → #ee5a24)
-- Success: Green (#00b894)
-- Warning: Orange (#fdcb6e)
-- Error: Red (#ff6b6b)
-
-### Typography
-- Headings: Gradient text effects
-- Body: Clean, readable fonts
-- Icons: Bootstrap Icons
-
-## Responsive Design
-
-- Mobile-first approach
-- Bootstrap 5 grid system
-- Touch-friendly interface
-- Adaptive layouts for all screen sizes
-
-## Management Commands
-
-### Seed Database
-```bash
-python manage.py seed_words
-```
-- Adds 500+ five-letter words
-- Creates default admin user
-
-### Cleanup Words
-```bash
-python manage.py cleanup_words
-```
-- Removes any 4-letter words
-- Ensures data integrity
-
-## Deployment
-
-### Heroku
-1. Create Heroku app
-2. Set environment variables
-3. Deploy with Git
-
-### Environment Variables
-```
-SECRET_KEY=your-secret-key
-DEBUG=False
-DATABASE_URL=your-database-url
-```
-
-## Testing
-
-```bash
-python manage.py test
-flake8 .
-black .
-```
-
-## Performance Features
-
-- Database optimization with proper indexing
-- Static file serving with WhiteNoise
-- Session management for user state
-- Real-time updates without page refresh
-- Efficient queries for admin reports
-
-## Security Features
-
-- CSRF protection on all forms
-- User authentication and authorization
-- Input validation and sanitization
-- Secure session handling
-- Role-based access control
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (git checkout -b feature/amazing-feature)
-3. Commit your changes (git commit -m 'Add amazing feature')
-4. Push to the branch (git push origin feature/amazing-feature)
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## License
+## 📞 Contact
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+- **GitHub**: [@PRAVEENK44](https://github.com/PRAVEENK44)
+- **Repository**: [Guess-the-Word](https://github.com/PRAVEENK44/Guess-the-Word)
 
-## Author
+---
 
-Your Name
-- GitHub: @yourusername
-- Email: your.email@example.com
-
-## Acknowledgments
-
-- Bootstrap for UI components
-- Bootstrap Icons for icons
-- All contributors and testers
+⭐ **Star this repository if you found it helpful!**
