@@ -1,6 +1,6 @@
-# Guess the Word - Django Game
+# Guess the word Game
 
-A modern, interactive word guessing game built with Django, featuring beautiful animations, real-time updates, and comprehensive admin reporting.
+A modern, interactive word guessing game featuring beautiful animations, real-time updates, and comprehensive admin reporting.
 
 ## Features
 
@@ -114,7 +114,7 @@ guess_the_word_django/
 ## Database Models
 
 ### CustomUser
-- Extended Django User with role field
+- Extended User with role field
 - Roles: 'admin' or 'player'
 
 ### GameWord
@@ -224,9 +224,6 @@ Your Name
 
 ## Acknowledgments
 
-- Django framework
 - Bootstrap for UI components
 - Bootstrap Icons for icons
 - All contributors and testers
-
-Made with Django
